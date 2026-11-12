@@ -91,6 +91,10 @@ int tst_coll_allreduce_sum_run (struct tst_env * env)
       }
 
     tst_type_freevalues (env->type, cmp_value, 1);
+
+    if (errors) {
+      tst_test_recordfailure (env);
+    }
   }
 
   return 0;

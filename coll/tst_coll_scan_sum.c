@@ -98,8 +98,9 @@ int tst_coll_scan_sum_run (struct tst_env * env)
         errors++;
       }
   }
-  if (errors)
+  if (errors) {
     tst_test_recordfailure (env);
+  }
 
   return 0;
 }
