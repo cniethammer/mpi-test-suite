@@ -60,7 +60,6 @@ tst_output_types tst_output_init(tst_output_stream * output, int rank,
 
   va_list arglist;
   char * fname;
-  int freelen;
 
   MPI_Comm_rank (MPI_COMM_WORLD, &tst_output_global_rank);
 
