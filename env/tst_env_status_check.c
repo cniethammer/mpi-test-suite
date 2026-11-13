@@ -8,6 +8,7 @@
  *
  * Date: Dec. 1., 2005
  */
+#include <stdint.h>
 #include <mpi.h>
 #include "mpi_test_suite.h"
 #include "tst_output.h"
@@ -16,8 +17,8 @@
 #define LOCAL_CHECK(func_string,var,op,expected) \
   if (var op expected) { \
     if (tst_report == TST_REPORT_FULL) \
-      printf ("(Rank:%d) Failed in " func_string " (Line:%d) " #var " " #op " expected:%d but got:%d\n", \
-              tst_global_rank, __LINE__, expected, var); \
+      printf ("(Rank:%d) Failed in " func_string " (Line:%d) " #var " " #op " expected:%ld but got:%ld\n", \
+              tst_global_rank, __LINE__, (long) (intptr_t) (expected), (long) (intptr_t) (var)); \
     tst_test_recordfailure (env); \
   }
 
