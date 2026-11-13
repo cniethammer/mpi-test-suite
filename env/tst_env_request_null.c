@@ -9,6 +9,7 @@
  *
  * Date: Dec. 1., 2005
  */
+#include <stdint.h>
 #include <mpi.h>
 #include "mpi_test_suite.h"
 #include "tst_output.h"
@@ -18,8 +19,13 @@ static int tst_test_reset_statuses (int count, MPI_Status * statuses)
 {
   int i;
   memset (statuses, DEFAULT_INIT_BYTE, sizeof (MPI_Status) * count);
+  /*
+   * Pre-set MPI_ERROR to a negative value: MPI error codes are non-negative,
+   * so -4711 cannot collide with an error code set by the MPI implementation
+   * and is used to detect whether MPI_ERROR was modified.
+   */
   for (i = 0; i < count; i++)
-    statuses[i].MPI_ERROR = 4711;
+    statuses[i].MPI_ERROR = -4711;
   return 0;
 }
 
@@ -54,7 +60,7 @@ int tst_env_request_null_run (struct tst_env * env)
    * Only the MULTIPLE COMPLETION calls may change the MPI_ERROR field
    * however, it is not said, that they should change in case of
    * inactive Requests. So, we check MPI_ERROR for the two sensible
-   * values either MPI_SUCCESS or 4711, and according to the MPI standard
+   * values either MPI_SUCCESS or -4711, and according to the MPI standard
    * with empty status (MPI-2.1, p52, l35):
    *   aka not cancelled, zero count, zero elements,
    *   MPI_TAG == MPI_ANY_TAG and
@@ -64,8 +70,8 @@ int tst_env_request_null_run (struct tst_env * env)
 #define LOCAL_CHECK(func_string,var,op,expected) \
   if (var op expected) { \
     if (tst_report == TST_REPORT_FULL) \
-      printf ("(Rank:%d) Failed in " func_string " " #var " " #op " expected:%d but got:%d\n", \
-              tst_global_rank, expected, var); \
+      printf ("(Rank:%d) Failed in " func_string " " #var " " #op " expected:%ld but got:%ld\n", \
+              tst_global_rank, (long) (intptr_t) (expected), (long) (intptr_t) (var)); \
     tst_test_recordfailure (env); \
   }
 
@@ -81,7 +87,7 @@ int tst_env_request_null_run (struct tst_env * env)
   MPI_CHECK (MPI_Get_count (&statuses[0], MPI_CHAR, &get_count[0]));
   MPI_CHECK (MPI_Get_elements (&statuses[0], MPI_CHAR, &get_elements[0]));
 
-  LOCAL_CHECK ("MPI_Wait", (statuses[0].MPI_ERROR != MPI_SUCCESS) && statuses[0].MPI_ERROR, !=, 4711);
+  LOCAL_CHECK ("MPI_Wait", (statuses[0].MPI_ERROR != MPI_SUCCESS) && statuses[0].MPI_ERROR, !=, -4711);
   LOCAL_CHECK ("MPI_Wait", cancelled[0], !=, 0);
   LOCAL_CHECK ("MPI_Wait", get_count[0], !=, 0);
   LOCAL_CHECK ("MPI_Wait", get_elements[0], !=, 0);
@@ -104,8 +110,8 @@ int tst_env_request_null_run (struct tst_env * env)
   MPI_CHECK (MPI_Get_elements (&statuses[1], MPI_CHAR, &get_elements[1]));
 
 
-  LOCAL_CHECK ("MPI_Waitall", (statuses[0].MPI_ERROR != MPI_SUCCESS) && statuses[0].MPI_ERROR, !=, 4711);
-  LOCAL_CHECK ("MPI_Waitall", (statuses[1].MPI_ERROR != MPI_SUCCESS) && statuses[1].MPI_ERROR, !=, 4711);
+  LOCAL_CHECK ("MPI_Waitall", (statuses[0].MPI_ERROR != MPI_SUCCESS) && statuses[0].MPI_ERROR, !=, -4711);
+  LOCAL_CHECK ("MPI_Waitall", (statuses[1].MPI_ERROR != MPI_SUCCESS) && statuses[1].MPI_ERROR, !=, -4711);
   LOCAL_CHECK ("MPI_Waitall", cancelled[0], !=, 0);
   LOCAL_CHECK ("MPI_Waitall", cancelled[1], !=, 0);
   LOCAL_CHECK ("MPI_Waitall", get_count[0], !=, 0);
@@ -136,9 +142,9 @@ int tst_env_request_null_run (struct tst_env * env)
   /*
    * As said, only the MULTIPLE COMPLETION calls may change the MPI_ERROR field
    * however, it is not said, that they should change in case of inactive Requests.
-   * So, we check for the two sensible values either MPI_SUCCESS or 4711
+   * So, we check for the two sensible values either MPI_SUCCESS or -4711
    */
-  LOCAL_CHECK ("MPI_Waitany", (statuses[1].MPI_ERROR != MPI_SUCCESS) && statuses[1].MPI_ERROR, !=, 4711);
+  LOCAL_CHECK ("MPI_Waitany", (statuses[1].MPI_ERROR != MPI_SUCCESS) && statuses[1].MPI_ERROR, !=, -4711);
 
   LOCAL_CHECK ("MPI_Waitany", cancelled[1], !=, 0);
   LOCAL_CHECK ("MPI_Waitany", get_count[1], !=, 0);
@@ -169,7 +175,7 @@ int tst_env_request_null_run (struct tst_env * env)
   MPI_CHECK (MPI_Get_count (&statuses[0], MPI_CHAR, &get_count[0]));
   MPI_CHECK (MPI_Get_elements (&statuses[0], MPI_CHAR, &get_elements[0]));
 
-  LOCAL_CHECK ("MPI_Test", (statuses[0].MPI_ERROR != MPI_SUCCESS) && statuses[0].MPI_ERROR, !=, 4711);
+  LOCAL_CHECK ("MPI_Test", (statuses[0].MPI_ERROR != MPI_SUCCESS) && statuses[0].MPI_ERROR, !=, -4711);
   LOCAL_CHECK ("MPI_Test", flags[0], !=, 1);
   LOCAL_CHECK ("MPI_Test", cancelled[0], !=, 0);
   LOCAL_CHECK ("MPI_Test", get_count[0], !=, 0);
@@ -193,8 +199,8 @@ int tst_env_request_null_run (struct tst_env * env)
   MPI_CHECK (MPI_Get_elements (&statuses[0], MPI_CHAR, &get_elements[0]));
   MPI_CHECK (MPI_Get_elements (&statuses[1], MPI_CHAR, &get_elements[1]));
 
-  LOCAL_CHECK ("MPI_Testall", (statuses[0].MPI_ERROR != MPI_SUCCESS) && statuses[0].MPI_ERROR, !=, 4711);
-  LOCAL_CHECK ("MPI_Testall", (statuses[1].MPI_ERROR != MPI_SUCCESS) && statuses[1].MPI_ERROR, !=, 4711);
+  LOCAL_CHECK ("MPI_Testall", (statuses[0].MPI_ERROR != MPI_SUCCESS) && statuses[0].MPI_ERROR, !=, -4711);
+  LOCAL_CHECK ("MPI_Testall", (statuses[1].MPI_ERROR != MPI_SUCCESS) && statuses[1].MPI_ERROR, !=, -4711);
   LOCAL_CHECK ("MPI_Testall", flags[0], !=, 1);
   LOCAL_CHECK ("MPI_Testall", cancelled[0], !=, 0);
   LOCAL_CHECK ("MPI_Testall", cancelled[1], !=, 0);
@@ -221,7 +227,7 @@ int tst_env_request_null_run (struct tst_env * env)
   MPI_CHECK (MPI_Get_count (&statuses[1], MPI_CHAR, &get_count[1]));
   MPI_CHECK (MPI_Get_elements (&statuses[1], MPI_CHAR, &get_elements[1]));
 
-  LOCAL_CHECK ("MPI_Testany", (statuses[1].MPI_ERROR != MPI_SUCCESS) && statuses[1].MPI_ERROR , !=, 4711);
+  LOCAL_CHECK ("MPI_Testany", (statuses[1].MPI_ERROR != MPI_SUCCESS) && statuses[1].MPI_ERROR , !=, -4711);
   LOCAL_CHECK ("MPI_Testany", flags[1], !=, 1);
   LOCAL_CHECK ("MPI_Testany", indices[1], !=, MPI_UNDEFINED);
   LOCAL_CHECK ("MPI_Testany", cancelled[1], !=, 0);
@@ -252,7 +258,7 @@ int tst_env_request_null_run (struct tst_env * env)
   MPI_CHECK (MPI_Get_count (&statuses[0], MPI_CHAR, &get_count[0]));
   MPI_CHECK (MPI_Get_elements (&statuses[0], MPI_CHAR, &get_elements[0]));
 
-  LOCAL_CHECK ("MPI_Probe", (statuses[0].MPI_ERROR != MPI_SUCCESS) && statuses[0].MPI_ERROR, !=, 4711);
+  LOCAL_CHECK ("MPI_Probe", (statuses[0].MPI_ERROR != MPI_SUCCESS) && statuses[0].MPI_ERROR, !=, -4711);
   LOCAL_CHECK ("MPI_Probe", cancelled[0], !=, 0);
   LOCAL_CHECK ("MPI_Probe", get_count[0], !=, 0);
   LOCAL_CHECK ("MPI_Probe", get_elements[0], !=, 0);
@@ -270,7 +276,7 @@ int tst_env_request_null_run (struct tst_env * env)
   MPI_CHECK (MPI_Get_count (&statuses[0], MPI_CHAR, &get_count[0]));
   MPI_CHECK (MPI_Get_elements (&statuses[0], MPI_CHAR, &get_elements[0]));
 
-  LOCAL_CHECK ("MPI_Iprobe", (statuses[0].MPI_ERROR != MPI_SUCCESS) && statuses[0].MPI_ERROR, !=, 4711);
+  LOCAL_CHECK ("MPI_Iprobe", (statuses[0].MPI_ERROR != MPI_SUCCESS) && statuses[0].MPI_ERROR, !=, -4711);
   LOCAL_CHECK ("MPI_Iprobe", flags[0], !=, 1);
   LOCAL_CHECK ("MPI_Iprobe", cancelled[0], !=, 0);
   LOCAL_CHECK ("MPI_Iprobe", get_count[0], !=, 0);

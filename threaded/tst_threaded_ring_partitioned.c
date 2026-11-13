@@ -123,7 +123,6 @@ int tst_threaded_ring_partitioned_run(struct tst_env *env)
   MPI_Request *send_request = &env->req_buffer[0];
   MPI_Request *recv_request = &env->req_buffer[1];
 
-  int num_threads = 1 + tst_thread_num_threads(); /* we have to add 1 for the master thread */
   int num_worker_threads = tst_thread_num_threads();
   int thread_num = tst_thread_get_num();
 
@@ -226,7 +225,6 @@ int tst_threaded_ring_partitioned_run(struct tst_env *env)
 int tst_threaded_ring_partitioned_cleanup(struct tst_env *env)
 {
   int thread_num = tst_thread_get_num();
-  int num_worker_threads = tst_thread_num_threads();
 
   if (thread_num == TST_THREAD_MASTER)
   {

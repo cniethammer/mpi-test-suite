@@ -472,6 +472,10 @@ int main (int argc, char * argv[])
                      tst_global_rank);
   tst_output_close (DEBUG_LOG);
 
+  free (tst_test_array);
+  free (tst_comm_array);
+  free (tst_type_array);
+
   MPI_Finalize ();
 
   return (tst_test_get_failed_num () > 0 ? -1 : 0);
